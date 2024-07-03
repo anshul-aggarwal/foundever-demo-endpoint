@@ -44,18 +44,20 @@ app.add_middleware(
 )
 
 
-AGENT_TYPES = [
-('5e6f49759090ee0588405615', 'Fixed | B2B | Retention & Loyalty Advisor'),
-('5d4973edd6cb00e5f3817795', 'Fixed | B2B | Sales Advisor'),
-('5cb85a21920026399882a18b', 'Fixed | B2B | Service Advisor | Web'),
-('5c59976e9200265b356e5fd4', 'Fixed | B2C | OEC Advisor'),
-('5d7a37f39090ee2bcfd9f4bb', 'Facturen en betalen'),
-('5d7a38279090ee1e45953aad', 'Wifi Specialists (vh: Internet)'),
-('5d7a38339090ee24b42e6ca7', 'Monteur'),
-('5d7a390a9090ee102c931ea8', 'Overige vragen'),
-('5d832b4a9090ee4fda3f8e7b', 'Televisie'),
-('5f7ec5333298c90c81b34680', 'Wifi Case Manager'),
-]
+AGENT_TYPES = [("5e21b19e0e69dc2fc7e23715", "Fixed || B2C || Service"),
+("5e21b1b40e69dc45071f618c", "Fixed || B2C || Sales"),
+("5e21b1c20e69dc2fc7e23729", "Fixed || B2B || Service"),
+("5e21b1d40e69dc584ad07e5f", "Fixed || B2B || Sales"),
+("5e5f74d4526722271b4bd359", "Fixed | B2C | Bright"),
+("5e5f75075267221e2d3fd8f5", "Fixed | B2C | Bright Selfservice"),
+("5e79d5c8dbddbb7c8e82df57", "Fixed | Wifi Assistant"),
+("5e7b6e165267223069a86dc4", "Consumer"),
+("5e7b6e2552672229004df65c", "Business"),
+("5e7dad545267223078f57026", "VodafoneZiggo || Marketing Tribe"),
+("5e833059dbddbb604f148460", "VZ Marketing Tribe"),
+("5eb51980dbddbb20eacc45f8", "Training"),
+("5eb51a82dbddbb28b91fd042", "Training LWD"),
+("5ed656280e69dc3dc1725d5c", "Warm Handover")]
 
 @app.get("/healthcheck")
 async def healthcheck():
@@ -68,6 +70,10 @@ async def query(body: ChatQuestion = Body(), api_key_header: str = Security(api_
         raise HTTPException(status_code=401, detail="Incorrect API Key.")
 
     cur_time = datetime.now(timezone.utc)
+
+    msg1 = AIMessage(content=f"Hi! Your message was '{body.question}'", timestamp=str(cur_time))
+    msg2 = AIMessage(content=f"Random number: {random.randint(1,99)}", timestamp=str(cur_time))
+
     dice_roll = random.randint(1,6)
     if dice_roll >= 5:
         selected_agent = random.choice(AGENT_TYPES)
@@ -76,13 +82,10 @@ async def query(body: ChatQuestion = Body(), api_key_header: str = Security(api_
             "agent_type_id": selected_agent[0],
             "agent_type_name": selected_agent[1]
         }
+        transfer_msg = AIMessage(content=f"Transferring to agent '{selected_agent[1]}' (ID: {selected_agent[0]})", timestamp=str(cur_time))
+        return {"messages": [msg1, msg2, transfer_msg], "metadata": metadata, "timestamp": cur_time, "session_id": session_id}
     else:
-        metadata = {}
-    
-    msg1 = AIMessage(content=f"Hi! Your message was '{body.question}'", timestamp=str(cur_time))
-    msg2 = AIMessage(content=f"Random number: {random.randint(1,99)}", timestamp=str(cur_time))
-
-    return {"messages": [msg1, msg2], "metadata": metadata, "timestamp": cur_time, "session_id": session_id}
+        return {"messages": [msg1, msg2], "timestamp": cur_time, "session_id": session_id}
 
 
 if __name__ == "__main__":
